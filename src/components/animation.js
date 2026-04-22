@@ -559,5 +559,187 @@ $('.features_item-contain.is-3').each(function() {
 })
 
 
+$('.features_item-contain.is-4').each(function() {
+    (function () {
+  'use strict';
+
+  if (typeof window === 'undefined' || !window.gsap) return;
+  const gsap = window.gsap;
+  if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
+
+  const prefersReducedMotion =
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function qs(root, sel) { return root.querySelector(sel); }
+  function qsa(root, sel) { return Array.from(root.querySelectorAll(sel)); }
+
+  /* ───────── Entry animation ───────── */
+  function buildEntryTimeline(scene) {
+    const table  = qs(scene, '.variance-table');
+    const popup  = qs(scene, '.drill-popup');
+    const badge  = qs(scene, '.drill-badge');
+    const title  = qs(scene, '.drill-title');
+    const sects  = qsa(scene, '.drill-section');
+    const listItems = qsa(scene, '.drill-list__item');
+    const hlBtn  = qs(scene, '.vt-highlight-btn');
+
+    gsap.set(table, { opacity: 0, y: -20 });
+    gsap.set(popup, { opacity: 0, y: 40, scale: 0.97, transformOrigin: '50% 0%' });
+    gsap.set([badge, title, ...sects], { opacity: 0, y: 8 });
+    gsap.set(listItems, { opacity: 0, x: -6 });
+    if (hlBtn) gsap.set(hlBtn, { opacity: 0, scale: 0.92, transformOrigin: '50% 50%' });
+
+    const tl = gsap.timeline();
+
+    tl.to(table, {
+        opacity: 1, y: 0, duration: 0.8, ease: 'power2.out'
+      }, 0)
+      .to(hlBtn, {
+        opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(2)'
+      }, 0.55)
+      .to(popup, {
+        opacity: 1, y: 0, scale: 1, duration: 0.85, ease: 'power3.out'
+      }, 0.4)
+      .to([badge, title, ...sects], {
+        opacity: 1, y: 0, duration: 0.5, stagger: 0.09, ease: 'power2.out'
+      }, 0.7)
+      .to(listItems, {
+        opacity: 0.5, x: 0, duration: 0.45, stagger: 0.12, ease: 'power2.out'
+      }, '>-0.2');
+
+    return tl;
+  }
+
+  /* ───────── Custom cursor (hover interaction) ─────────
+     - On mouseenter: hide native cursor, fade in custom cursor
+     - On mousemove : smoothly track mouse position (gsap.quickTo)
+     - On mouseleave: restore native cursor, fade out custom cursor
+  ------------------------------------------------------- */
+  function bindCustomCursor(scene) {
+    const cursor = qs(scene, '[data-custom-cursor]');
+    if (!cursor) return;
+
+    /* Touch devices – skip (no hover) */
+    const isTouch = window.matchMedia &&
+      window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    if (isTouch) return;
+
+    /* quickTo returns ultra-fast setters – one call per frame, ease baked in */
+    const setX = gsap.quickTo(cursor, 'x', { duration: 0.28, ease: 'power3.out' });
+    const setY = gsap.quickTo(cursor, 'y', { duration: 0.28, ease: 'power3.out' });
+
+    let isInside = false;
+    let pendingFirstMove = false;
+
+    scene.addEventListener('mouseenter', (ev) => {
+      isInside = true;
+      scene.classList.add('is-cursor-active');
+      pendingFirstMove = true;
+
+      const rect = scene.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+      /* Jump instantly to the entry point to avoid the "flying in" effect */
+      gsap.set(cursor, { x: x, y: y });
+
+      gsap.to(cursor, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.25,
+        ease: 'power2.out',
+        overwrite: 'auto'
+      });
+    });
+
+    scene.addEventListener('mousemove', (ev) => {
+      if (!isInside) return;
+      const rect = scene.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+
+      if (pendingFirstMove) {
+        gsap.set(cursor, { x: x, y: y });
+        pendingFirstMove = false;
+      } else {
+        setX(x);
+        setY(y);
+      }
+    });
+
+    scene.addEventListener('mouseleave', () => {
+      isInside = false;
+      scene.classList.remove('is-cursor-active');
+      gsap.to(cursor, {
+        opacity: 0,
+        duration: 0.2,
+        ease: 'power2.out',
+        overwrite: 'auto'
+      });
+    });
+  }
+
+  /* ───────── Scene orchestration ───────── */
+  function initScene(scene) {
+    if (scene.dataset.bsScene4Inited === '1') return;
+    scene.dataset.bsScene4Inited = '1';
+
+    const embedContain = document.querySelector('.features_fourth-contain-embed');
+    if (embedContain) gsap.set(embedContain, { opacity: 1 });
+
+    const master = gsap.timeline({ paused: true });
+    master.add(buildEntryTimeline(scene), 0);
+
+    if (prefersReducedMotion) {
+      master.progress(1);
+    } else if (window.ScrollTrigger) {
+      window.ScrollTrigger.create({
+        trigger: scene,
+        start: 'top 50%',
+        once: true,
+        onEnter: () => master.play()
+      });
+    } else {
+      master.play();
+    }
+
+    bindCustomCursor(scene);
+  }
+
+  function init() {
+    // Optional responsive scaling for scenes wrapped in .bluesand-scene-4-scale
+    function applyScale() {
+      qsa(document, '.bluesand-scene-4-scale > .bluesand-scene-4').forEach((scene) => {
+        const wrap = scene.parentElement;
+        if (!wrap) return;
+
+        const base = 588;
+
+        const cs = getComputedStyle(wrap);
+        const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const availW = Math.max(0, (wrap.clientWidth || base) - padX);
+
+        // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
+        const scale = Math.min(1, availW / base);
+        wrap.style.setProperty('--scene4-scale', String(scale));
+      });
+
+      if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
+    }
+
+    applyScale();
+    window.addEventListener('resize', applyScale, { passive: true });
+
+    qsa(document, '.bluesand-scene-4').forEach(initScene);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+})
+
+
 
 });
