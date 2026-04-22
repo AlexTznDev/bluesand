@@ -496,7 +496,7 @@ $('.features_item-contain.is-3').each(function() {
     var master = gsap.timeline({
       scrollTrigger: {
         trigger: scene,
-        start: "top 78%",
+        start: "top 50%",
         once: true,
         // markers: true, // uncomment to debug
       },
