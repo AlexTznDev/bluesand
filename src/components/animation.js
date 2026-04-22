@@ -630,9 +630,19 @@ $('.features_item-contain.is-4').each(function() {
 
     let isInside = false;
     let pendingFirstMove = false;
+    let lastClientX = 0;
+    let lastClientY = 0;
+
+    const hideCursor = () => {
+      isInside = false;
+      scene.classList.remove('is-cursor-active');
+      gsap.to(cursor, { opacity: 0, duration: 0.2, ease: 'power2.out', overwrite: 'auto' });
+    };
 
     scene.addEventListener('mouseenter', (ev) => {
       isInside = true;
+      lastClientX = ev.clientX;
+      lastClientY = ev.clientY;
       scene.classList.add('is-cursor-active');
       pendingFirstMove = true;
 
@@ -653,6 +663,8 @@ $('.features_item-contain.is-4').each(function() {
 
     scene.addEventListener('mousemove', (ev) => {
       if (!isInside) return;
+      lastClientX = ev.clientX;
+      lastClientY = ev.clientY;
       const rect = scene.getBoundingClientRect();
       const x = ev.clientX - rect.left;
       const y = ev.clientY - rect.top;
@@ -666,16 +678,20 @@ $('.features_item-contain.is-4').each(function() {
       }
     });
 
-    scene.addEventListener('mouseleave', () => {
-      isInside = false;
-      scene.classList.remove('is-cursor-active');
-      gsap.to(cursor, {
-        opacity: 0,
-        duration: 0.2,
-        ease: 'power2.out',
-        overwrite: 'auto'
-      });
-    });
+    scene.addEventListener('mouseleave', hideCursor);
+
+    window.addEventListener('scroll', () => {
+      if (!isInside) return;
+      const rect = scene.getBoundingClientRect();
+      const stillInside = lastClientX >= rect.left && lastClientX <= rect.right &&
+                          lastClientY >= rect.top  && lastClientY <= rect.bottom;
+      if (!stillInside) {
+        hideCursor();
+      } else {
+        setX(lastClientX - rect.left);
+        setY(lastClientY - rect.top);
+      }
+    }, { passive: true });
   }
 
   /* ───────── Scene orchestration ───────── */
