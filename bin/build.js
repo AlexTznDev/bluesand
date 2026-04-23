@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild';
 import { sassPlugin } from 'esbuild-sass-plugin';
 import { readdirSync } from 'fs';
+import { createServer, request as httpRequest } from 'http';
 import { join, sep } from 'path';
 
 // Config output
@@ -13,6 +14,7 @@ const ENTRY_POINTS = ['src/index.js'];
 // Config dev serving
 const LIVE_RELOAD = !PRODUCTION;
 const SERVE_PORT = 3000;
+const ESBUILD_PORT = 3001;
 const SERVE_ORIGIN = `http://localhost:${SERVE_PORT}`;
 
 // Create context
@@ -39,12 +41,30 @@ if (PRODUCTION) {
 // Watch and serve files in dev
 else {
   await context.watch();
-  await context
-    .serve({
-      servedir: BUILD_DIRECTORY,
-      port: SERVE_PORT,
-    })
-    .then(logServedFiles);
+  await context.serve({ servedir: BUILD_DIRECTORY, port: ESBUILD_PORT });
+
+  // Proxy on SERVE_PORT that adds CORS headers to every response
+  createServer((req, res) => {
+    const options = {
+      hostname: 'localhost',
+      port: ESBUILD_PORT,
+      path: req.url,
+      method: req.method,
+      headers: req.headers,
+    };
+
+    const proxy = httpRequest(options, (esbuildRes) => {
+      res.writeHead(esbuildRes.statusCode, {
+        ...esbuildRes.headers,
+        'Access-Control-Allow-Origin': '*',
+      });
+      esbuildRes.pipe(res, { end: true });
+    });
+
+    req.pipe(proxy, { end: true });
+  }).listen(SERVE_PORT);
+
+  logServedFiles();
 }
 
 /**

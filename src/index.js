@@ -5,5 +5,4 @@ import './components/slider';
 import './components/smoothScroll';
 
 window.Webflow ||= [];
-window.Webflow.push(() => {
-});
+window.Webflow.push(() => {});
