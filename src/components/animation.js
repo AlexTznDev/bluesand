@@ -304,8 +304,8 @@ $('.features_item-contain.is-2').each(function () {
     }
 
     // ---------- CARD POSITIONING ----------
-    var ACT  = { xPercent: -50, x: -83, yPercent: -50, y:  39 };
-    var CTRL = { xPercent: -50, x:  84, yPercent: -50, y: -49 };
+    var ACT  = { xPercent: -50, x: -83, yPercent: -50, y:  19 };
+    var CTRL = { xPercent: -50, x:  84, yPercent: -50, y: -39 };
 
     function buildActivityTimeline(card) {
       var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
