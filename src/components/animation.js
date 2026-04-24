@@ -397,24 +397,23 @@ window.Webflow.push(() => {
       }
 
       // ---------- SCALE (Webflow container aware) ----------
-      function applySceneScale() {
-        var base = 588;
+function applySceneScale() {
+  var base = 588;
+  var scaleWrap = scope.querySelector('.bluesand-scene-scale');
+  var box = scope.querySelector('.features_second-contain-embed') || scaleWrap.parentElement;
+  if (!scaleWrap || !box) return;
 
-        // ton “gros” container avec aspect-ratio + padding
-        var box = scope.querySelector('.features_contain-embed.is-2') || scope;
-        var scaleWrap = scope.querySelector('.bluesand-scene-scale');
-        if (!scaleWrap || !box) return;
+  var cs = getComputedStyle(box);
+  var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
 
-        var cs = getComputedStyle(box);
-        var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-        var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+  var availW = Math.max(0, box.clientWidth - padX);
+  var availH = Math.max(0, box.clientHeight - padY);
 
-        var availW = Math.max(0, box.clientWidth - padX);
-        var availH = Math.max(0, box.clientHeight - padY);
-
-        var scale = Math.min(1, availW / base, availH / base);
-        scaleWrap.style.setProperty('--scene-scale', String(scale));
-      }
+  // Contraindre W ET H — la scène est carrée, le plus petit des deux gagne
+  var scale = Math.min(availW / base, availH / base);
+  scaleWrap.style.setProperty('--scene-scale', String(scale));
+}
 
       // ---------- PULSE ----------
       function animatePulse(dotEl) {
@@ -758,6 +757,9 @@ window.Webflow.push(() => {
         var agent = q(scene, '.card-agent');
         if (!list || !agent) return;
 
+        var embedContain = document.querySelector('.features_third-contain-embed');
+        if (embedContain) gsap.set(embedContain, { opacity: 1 });
+
         var master = gsap.timeline({
           scrollTrigger: {
             trigger: scene,
@@ -801,7 +803,7 @@ window.Webflow.push(() => {
               // "lock" the scale at the smallest value seen. Width is the stable input.
               var availW = Math.max(0, (wrap.clientWidth || baseW) - padX);
 
-              var scale = Math.min(1, availW / baseW);
+              var scale = availW / baseW;
               wrap.style.setProperty('--scene2-scale', String(scale));
             });
 
@@ -1035,24 +1037,25 @@ window.Webflow.push(() => {
 
       function init() {
         // Optional responsive scaling for scenes wrapped in .bluesand-scene-4-scale
-        function applyScale() {
-          qsa(document, '.bluesand-scene-4-scale > .bluesand-scene-4').forEach((scene) => {
-            const wrap = scene.parentElement;
-            if (!wrap) return;
+            function applyScale() {
+      qsa(document, '.bluesand-scene-4-scale > .bluesand-scene-4').forEach((scene) => {
+        const wrap = scene.parentElement;
+        if (!wrap) return;
 
-            const base = 588;
+        const base = 588;
 
-            const cs = getComputedStyle(wrap);
-            const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-            const availW = Math.max(0, (wrap.clientWidth || base) - padX);
+        const cs = getComputedStyle(wrap);
+        const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        const availW = Math.max(0, (wrap.clientWidth || base) - padX);
 
-            // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
-            const scale = Math.min(1, availW / base);
-            wrap.style.setProperty('--scene4-scale', String(scale));
-          });
+        // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
+        const scale = availW / base;
+        wrap.style.setProperty('--scene4-scale', String(scale));
+      });
 
-          if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
-        }
+      if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
+    }
+
 
         applyScale();
         window.addEventListener('resize', applyScale, { passive: true });
