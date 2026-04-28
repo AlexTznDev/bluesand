@@ -828,14 +828,13 @@ window.Webflow.push(() => {
 
   $('.nav_component').each(function () {
     const $nav = $(this);
-    mm.add('(min-width: 992px)', () => {
-      ScrollTrigger.create({
-        trigger: 'body',
-        start: '32px top',
 
-        onEnter: () => $nav.addClass('is-scroll'),
-        onLeaveBack: () => $nav.removeClass('is-scroll'),
-      });
+    ScrollTrigger.create({
+      trigger: 'body',
+      start: '32px top',
+
+      onEnter: () => $nav.addClass('is-scroll'),
+      onLeaveBack: () => $nav.removeClass('is-scroll'),
     });
   });
 
