@@ -4,3 +4,24 @@
 .home-hero_section {
   opacity: 0;
 }
+
+.nav_component {
+  transition: all 0.3s ease-in-out;
+  .nav_container {
+    transition: all 0.3s ease-in-out;
+  }
+  &.is-scroll {
+    top: 1rem;
+    .nav_container {
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      width: calc(min(100%, 50rem) - 4rem);
+    }
+    .navigation_link {
+      &:hover {
+        background-color: var(--colors--cream);
+      }
+    }
+  }
+}

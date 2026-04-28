@@ -2,6 +2,7 @@ import { lenis } from './smoothScroll';
 
 window.Webflow ||= [];
 window.Webflow.push(() => {
+  let mm = gsap.matchMedia();
   $('.home-hero_section').each(function () {
     const el = $(this)[0];
 
@@ -112,6 +113,7 @@ window.Webflow.push(() => {
         if (!card) return gsap.timeline();
 
         const lineExp = qs(card, '[data-line-exp]');
+        console.log(lineExp);
         const lineAct = qs(card, '[data-line-act]');
         const areaExp = qs(card, '[data-area-exp]');
         const areaAct = qs(card, '[data-area-act]');
@@ -397,23 +399,23 @@ window.Webflow.push(() => {
       }
 
       // ---------- SCALE (Webflow container aware) ----------
-function applySceneScale() {
-  var base = 588;
-  var scaleWrap = scope.querySelector('.bluesand-scene-scale');
-  var box = scope.querySelector('.features_second-contain-embed') || scaleWrap.parentElement;
-  if (!scaleWrap || !box) return;
+      function applySceneScale() {
+        var base = 588;
+        var scaleWrap = scope.querySelector('.bluesand-scene-scale');
+        var box = scope.querySelector('.features_second-contain-embed') || scaleWrap.parentElement;
+        if (!scaleWrap || !box) return;
 
-  var cs = getComputedStyle(box);
-  var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-  var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        var cs = getComputedStyle(box);
+        var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+        var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
 
-  var availW = Math.max(0, box.clientWidth - padX);
-  var availH = Math.max(0, box.clientHeight - padY);
+        var availW = Math.max(0, box.clientWidth - padX);
+        var availH = Math.max(0, box.clientHeight - padY);
 
-  // Contraindre W ET H — la scène est carrée, le plus petit des deux gagne
-  var scale = Math.min(availW / base, availH / base);
-  scaleWrap.style.setProperty('--scene-scale', String(scale));
-}
+        // Contraindre W ET H — la scène est carrée, le plus petit des deux gagne
+        var scale = Math.min(availW / base, availH / base);
+        scaleWrap.style.setProperty('--scene-scale', String(scale));
+      }
 
       // ---------- PULSE ----------
       function animatePulse(dotEl) {
@@ -824,6 +826,19 @@ function applySceneScale() {
     })();
   });
 
+  $('.nav_component').each(function () {
+    const $nav = $(this);
+    mm.add('(min-width: 992px)', () => {
+      ScrollTrigger.create({
+        trigger: 'body',
+        start: '32px top',
+
+        onEnter: () => $nav.addClass('is-scroll'),
+        onLeaveBack: () => $nav.removeClass('is-scroll'),
+      });
+    });
+  });
+
   $('.features_item-contain.is-4').each(function () {
     (function () {
       'use strict';
@@ -1037,25 +1052,24 @@ function applySceneScale() {
 
       function init() {
         // Optional responsive scaling for scenes wrapped in .bluesand-scene-4-scale
-            function applyScale() {
-      qsa(document, '.bluesand-scene-4-scale > .bluesand-scene-4').forEach((scene) => {
-        const wrap = scene.parentElement;
-        if (!wrap) return;
+        function applyScale() {
+          qsa(document, '.bluesand-scene-4-scale > .bluesand-scene-4').forEach((scene) => {
+            const wrap = scene.parentElement;
+            if (!wrap) return;
 
-        const base = 588;
+            const base = 588;
 
-        const cs = getComputedStyle(wrap);
-        const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-        const availW = Math.max(0, (wrap.clientWidth || base) - padX);
+            const cs = getComputedStyle(wrap);
+            const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+            const availW = Math.max(0, (wrap.clientWidth || base) - padX);
 
-        // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
-        const scale = availW / base;
-        wrap.style.setProperty('--scene4-scale', String(scale));
-      });
+            // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
+            const scale = availW / base;
+            wrap.style.setProperty('--scene4-scale', String(scale));
+          });
 
-      if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
-    }
-
+          if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
+        }
 
         applyScale();
         window.addEventListener('resize', applyScale, { passive: true });
