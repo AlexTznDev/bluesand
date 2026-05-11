@@ -24,7 +24,7 @@ window.Webflow.push(() => {
       .to(h1, { opacity: 1, y: 0, duration: 0.65 }, 0.38)
       .to(subtitle, { opacity: 1, y: 0, duration: 0.55 }, 0.55)
       .to(form, { opacity: 1, y: 0, duration: 0.5 }, 0.7)
-      .to(h1Glow, { opacity: 0.3, duration: 1.2, ease: 'power2.out' }, 0.8);
+      .to(h1Glow, { opacity: 0.8, duration: 1.2, ease: 'power2.out' }, 0.8);
 
     if (h1Glow) {
       gsap.to(h1Glow, {
@@ -35,6 +35,42 @@ window.Webflow.push(() => {
         yoyo: true,
         repeat: -1,
       });
+    }
+
+    const svg = el.querySelector('.home-hero_circle');
+    if (svg) {
+      const outerRing = svg.querySelector('#circle');
+      const innerRing = svg.querySelector('#circle_2');
+      const glowCore = svg.querySelector('#Ellipse\\ 633');
+
+      // quickTo setters — one per axis per layer, ease baked in
+      const outerX = gsap.quickTo(outerRing, 'x', { duration: 1.8, ease: 'power3.out' });
+      const outerY = gsap.quickTo(outerRing, 'y', { duration: 1.8, ease: 'power3.out' });
+      const innerX = gsap.quickTo(innerRing, 'x', { duration: 2.6, ease: 'power3.out' });
+      const innerY = gsap.quickTo(innerRing, 'y', { duration: 2.6, ease: 'power3.out' });
+      const glowX = gsap.quickTo(glowCore, 'x', { duration: 1.2, ease: 'power3.out' });
+      const glowY = gsap.quickTo(glowCore, 'y', { duration: 1.2, ease: 'power3.out' });
+
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        // Normalized offset from center [-1, 1]
+        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+
+        outerX(nx * 18);
+        outerY(ny * 12);
+        innerX(nx * -10);
+        innerY(ny * -7);
+        glowX(nx * 28);
+        glowY(ny * 18);
+      });
+
+      const outerXBack = gsap.quickTo(outerRing, 'x', { duration: 2.0, ease: 'power2.inOut' });
+      const outerYBack = gsap.quickTo(outerRing, 'y', { duration: 2.0, ease: 'power2.inOut' });
+      const innerXBack = gsap.quickTo(innerRing, 'x', { duration: 2.0, ease: 'power2.inOut' });
+      const innerYBack = gsap.quickTo(innerRing, 'y', { duration: 2.0, ease: 'power2.inOut' });
+      const glowXBack = gsap.quickTo(glowCore, 'x', { duration: 2.0, ease: 'power2.inOut' });
+      const glowYBack = gsap.quickTo(glowCore, 'y', { duration: 2.0, ease: 'power2.inOut' });
     }
   });
 
