@@ -24,7 +24,7 @@ window.Webflow.push(() => {
       .to(h1, { opacity: 1, y: 0, duration: 0.65 }, 0.38)
       .to(subtitle, { opacity: 1, y: 0, duration: 0.55 }, 0.55)
       .to(form, { opacity: 1, y: 0, duration: 0.5 }, 0.7)
-      .to(h1Glow, { opacity: 1, duration: 1.2, ease: 'power2.out' }, 0.8);
+      .to(h1Glow, { opacity: 0.3, duration: 1.2, ease: 'power2.out' }, 0.8);
 
     if (h1Glow) {
       gsap.to(h1Glow, {
