@@ -214,7 +214,7 @@ window.Webflow.push(() => {
             0.35
           );
 
-        if (counter) animateCounter(counter, 92, 1.2, 0.4);
+        if (counter) animateCounter(counter, 65, 1.2, 0.4);
 
         tl.to(
           lineExp,
