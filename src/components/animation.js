@@ -830,7 +830,7 @@ window.Webflow.push(() => {
       var wrap = scene.parentElement;
       if (!wrap) return;
 
-      var baseW = 1050; // ← était 694
+      var baseW = 700;
 
       var cs = getComputedStyle(wrap);
       var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
