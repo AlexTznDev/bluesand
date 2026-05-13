@@ -841,7 +841,7 @@ window.Webflow.push(() => {
               // "lock" the scale at the smallest value seen. Width is the stable input.
               var availW = Math.max(0, (wrap.clientWidth || baseW) - padX);
 
-              var scale = Math.min(1, availW / baseW);
+              var scale = availW / baseW;
               wrap.style.setProperty('--scene2-scale', String(scale));
             });
 
