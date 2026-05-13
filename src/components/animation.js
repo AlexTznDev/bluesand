@@ -823,30 +823,27 @@ window.Webflow.push(() => {
   ───────────────────────────────────────────── */
       function init() {
         // Optional responsive scaling for scenes wrapped in .bluesand-scene-2-scale
-        function applyScale() {
-          document
-            .querySelectorAll('.bluesand-scene-2-scale > .bluesand-scene-2')
-            .forEach(function (scene) {
-              var wrap = scene.parentElement;
-              if (!wrap) return;
+  function applyScale() {
+  document
+    .querySelectorAll('.bluesand-scene-2-scale > .bluesand-scene-2')
+    .forEach(function (scene) {
+      var wrap = scene.parentElement;
+      if (!wrap) return;
 
-              var baseW = 694;
-              var baseH = 575;
+      var baseW = 1050; // ← était 694
 
-              var cs = getComputedStyle(wrap);
-              var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      var cs = getComputedStyle(wrap);
+      var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
 
-              // Important: do NOT use wrap.clientHeight here.
-              // The wrapper's height depends on the scale itself (CSS), which would
-              // "lock" the scale at the smallest value seen. Width is the stable input.
-              var availW = Math.max(0, (wrap.clientWidth || baseW) - padX);
+      var availW = Math.max(0, (wrap.clientWidth || baseW) - padX);
 
-              var scale = availW / baseW;
-              wrap.style.setProperty('--scene2-scale', String(scale));
-            });
+      var scale = Math.min(1, availW / baseW); // ← ajout du Math.min(1, ...)
+      wrap.style.setProperty('--scene2-scale', String(scale));
+    });
 
-          if (ScrollTrigger && ScrollTrigger.refresh) ScrollTrigger.refresh();
-        }
+  if (ScrollTrigger && ScrollTrigger.refresh) ScrollTrigger.refresh();
+}
+
 
         applyScale();
         window.addEventListener('resize', applyScale, { passive: true });
