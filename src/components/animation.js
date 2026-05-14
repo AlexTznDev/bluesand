@@ -1,4 +1,5 @@
 import { lenis } from './smoothScroll';
+import * as THREE from 'three';
 
 window.Webflow ||= [];
 window.Webflow.push(() => {
@@ -1116,4 +1117,245 @@ window.Webflow.push(() => {
       }
     })();
   });
+
+$('.feature_noise-particule').each(function () {
+  const container = this;
+  if (!window.gsap || !window.ScrollTrigger) return;
+  const isAmbient = container.classList.contains('is-ambient');
+
+  const DPR = Math.min(window.devicePixelRatio, 2);
+
+  // ── Glow overlay ──────────────────────────────────────
+  const glowEl = document.createElement('div');
+  glowEl.style.cssText =
+    'position:absolute;inset:0;pointer-events:none;opacity:0;' +
+    'background:radial-gradient(ellipse 70% 55% at 50% 50%,' +
+    'rgba(243,196,142,0.52) 0%,rgba(241,175,100,0.22) 45%,transparent 75%);';
+  container.appendChild(glowEl);
+
+  // ── Renderer ──────────────────────────────────────────
+  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+  renderer.setPixelRatio(DPR);
+  renderer.setSize(container.offsetWidth, container.offsetHeight);
+  renderer.domElement.style.cssText =
+    'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+  container.appendChild(renderer.domElement);
+
+  // ── Scene / Orthographic camera (pixel space) ─────────
+  const scene = new THREE.Scene();
+  let W = container.offsetWidth;
+  let H = container.offsetHeight;
+
+  const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 10);
+  camera.position.z = 1;
+
+  // ── Shaders ───────────────────────────────────────────
+  const vertexShader = /* glsl */ `
+    attribute vec3  aCircle;
+    attribute float aPhase;
+    attribute float aSpeed;
+    attribute float aAmpX;
+    attribute float aAmpY;
+    attribute float aSize;
+    attribute vec3  aColor;
+    attribute float aHidden;
+
+    uniform float uTime;
+    uniform float uOpacity;
+    uniform float uGather;
+    uniform float uSettle;
+    uniform float uRotation;
+
+    varying vec3  vColor;
+    varying float vAlpha;
+
+    void main() {
+      // Rotation du cercle avant explosion
+      float cosR = cos(uRotation);
+      float sinR = sin(uRotation);
+      vec3 rotatedCircle = vec3(
+        aCircle.x * cosR - aCircle.y * sinR,
+        aCircle.x * sinR + aCircle.y * cosR,
+        0.0
+      );
+
+      // All particles explode simultaneously — circle collapses on frame 1
+      float drag   = 2.2 + (1.0 - aSpeed * 1.8) * 4.2;
+      float tEased = 1.0 - pow(1.0 - uGather, drag);
+
+      vec3 pos = mix(rotatedCircle, position, tEased);
+
+      // Curved trajectory during flight — each grain curves along its own arc
+      // sin/cos of static aPhase = deterministic direction, no oscillation
+      float inFlight = tEased * (1.0 - tEased) * 4.0;
+      pos.x += sin(aPhase * 7.3) * aAmpX * 0.28 * inFlight;
+      pos.y += cos(aPhase * 5.1) * aAmpY * 0.20 * inFlight;
+
+      // Gravity: grains settle slightly lower than their target — heavier feel
+      float travelDist = length(position.xy - aCircle.xy);
+      pos.y -= travelDist * 0.028 * tEased;
+
+      // Phase 3 — léger mouvement organique autour de la position finale
+      float slowX = aSpeed * 0.5 + 0.18;
+      float slowY = aSpeed * 0.38 + 0.14;
+      pos.x += sin(uTime * slowX + aPhase) * aAmpX * 0.38 * uSettle;
+      pos.y += cos(uTime * slowY + aPhase * 1.3) * aAmpY * 0.28 * uSettle;
+
+      // Particules cachées au départ : s'allument pendant le trajet
+      float particleOpacity = mix(1.0, tEased, aHidden);
+      vAlpha = uOpacity * particleOpacity;
+      vColor = aColor;
+
+      gl_Position  = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = aSize;
+    }
+  `;
+
+  const fragmentShader = /* glsl */ `
+    varying vec3  vColor;
+    varying float vAlpha;
+
+    void main() {
+      vec2  uv = gl_PointCoord - 0.5;
+      float d  = length(uv);
+      float a  = 1.0 - smoothstep(0.2, 0.5, d);
+      if (a < 0.01) discard;
+      gl_FragColor = vec4(vColor, a * vAlpha);
+    }
+  `;
+
+  // ── Particles ─────────────────────────────────────────
+  const isMobile  = window.innerWidth < 992;
+  const COUNT      = isMobile ? 5000 : 7700;
+  const maxOpacity = isMobile ? 0.8 : 1.0;
+  const PALETTE = [
+    new THREE.Color('#CEAA7E'),
+    new THREE.Color('#D4A96A'),
+    new THREE.Color('#F3C48E'),
+    new THREE.Color('#F1BF85'),
+  ];
+
+  function gauss() {
+    const u = 1 - Math.random();
+    const v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+
+  const aPos    = new Float32Array(COUNT * 3); // positions gaussiennes (cloud)
+  const aCircle = new Float32Array(COUNT * 3); // positions sur le cercle
+  const aColors = new Float32Array(COUNT * 3);
+  const aPhases = new Float32Array(COUNT);
+  const aSpeeds = new Float32Array(COUNT);
+  const aAmpX   = new Float32Array(COUNT);
+  const aAmpY   = new Float32Array(COUNT);
+  const aSizes  = new Float32Array(COUNT);
+  const aHidden = new Float32Array(COUNT);
+
+  const circleR = Math.min(W, H) * 0.28; // rayon du cercle initial
+
+  for (let i = 0; i < COUNT; i++) {
+    // Nuage gaussien — destination finale
+    aPos[i * 3]     = gauss() * W * 0.141;
+    aPos[i * 3 + 1] = gauss() * H * 0.166;
+    aPos[i * 3 + 2] = 0;
+
+    // Cercle — anneau légèrement irrégulier, pas parfaitement mathématique
+    const angle = Math.random() * Math.PI * 2;
+    // Distribution gaussienne sur le rayon : dense au centre, queue qui s'étale
+    const r = circleR + gauss() * circleR * 0.04;
+    aCircle[i * 3]     = Math.cos(angle) * r;
+    aCircle[i * 3 + 1] = Math.sin(angle) * r;
+    aCircle[i * 3 + 2] = 0;
+
+    const c = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+    aColors[i * 3] = c.r; aColors[i * 3 + 1] = c.g; aColors[i * 3 + 2] = c.b;
+
+    aPhases[i] = Math.random() * Math.PI * 2;
+    aSpeeds[i] = Math.random() * 0.3 + 0.08;
+    aAmpX[i]   = (Math.random() * 0.6 + 0.4) * 22;
+    aAmpY[i]   = (Math.random() * 0.6 + 0.4) * 16;
+    aSizes[i]  = (Math.random() * 1.495 + 1.047) * DPR;
+    aHidden[i] = Math.random() < 0.4 ? 1.0 : 0.0;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(aPos,    3));
+  geometry.setAttribute('aCircle',  new THREE.BufferAttribute(aCircle, 3));
+  geometry.setAttribute('aColor',   new THREE.BufferAttribute(aColors, 3));
+  geometry.setAttribute('aPhase',   new THREE.BufferAttribute(aPhases, 1));
+  geometry.setAttribute('aSpeed',   new THREE.BufferAttribute(aSpeeds, 1));
+  geometry.setAttribute('aAmpX',    new THREE.BufferAttribute(aAmpX,   1));
+  geometry.setAttribute('aAmpY',    new THREE.BufferAttribute(aAmpY,   1));
+  geometry.setAttribute('aSize',    new THREE.BufferAttribute(aSizes,  1));
+  geometry.setAttribute('aHidden',  new THREE.BufferAttribute(aHidden, 1));
+
+  const uniforms = {
+    uTime:     { value: 0 },
+    uOpacity:  { value: isAmbient ? maxOpacity : 0 },
+    uGather:   { value: isAmbient ? 1 : 0 },
+    uSettle:   { value: 0 },
+    uRotation: { value: 0 },
+  };
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader,
+    fragmentShader,
+    uniforms,
+    transparent: true,
+    depthWrite: false,
+  });
+
+  scene.add(new THREE.Points(geometry, material));
+
+  // ── Tick ──────────────────────────────────────────────
+  let running = false;
+  function tick() {
+    if (!running) return;
+    uniforms.uTime.value = gsap.ticker.time;
+    renderer.render(scene, camera);
+  }
+
+  // ── Resize ────────────────────────────────────────────
+  function onResize() {
+    W = container.offsetWidth;
+    H = container.offsetHeight;
+    camera.left = -W / 2; camera.right  =  W / 2;
+    camera.top  =  H / 2; camera.bottom = -H / 2;
+    camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  }
+  window.addEventListener('resize', onResize, { passive: true });
+
+  // ── ScrollTrigger ─────────────────────────────────────
+  ScrollTrigger.create({
+    trigger: container,
+    start: 'top 60%',
+    end: 'bottom top',
+    markers: false, // set to true to debug
+    onEnter: () => {
+      running = true;
+      gsap.ticker.add(tick);
+
+      const tl = gsap.timeline();
+
+      if (isAmbient) {
+        // Mode ambient : particules déjà en place dès le départ, juste glow + mouvement
+        tl.to(glowEl,           { opacity: 1, duration: 1.8, ease: 'power2.out' })
+          .to(uniforms.uSettle, { value: 1,   duration: 2.0, ease: 'power2.out' }, 0);
+      } else {
+        // Mode normal : cercle → rotation → explosion → mouvement
+        tl.to(uniforms.uOpacity,  { value: maxOpacity,  duration: 0.35, ease: 'power2.out'  })
+          .to(uniforms.uRotation, { value: Math.PI / 6, duration: 2.2,  ease: 'power2.inOut'}, 0.3)
+          .to(uniforms.uGather,   { value: 1,            duration: 2.0,  ease: 'none'        }, 1.9)
+          .to(glowEl,             { opacity: 1,          duration: 1.2,  ease: 'power2.out'  }, 1.9)
+          .to(uniforms.uSettle,   { value: 1,            duration: 1.2,  ease: 'power2.out'  }, 3.5);
+      }
+    },
+    onLeave:     () => { running = false; gsap.ticker.remove(tick); },
+    onEnterBack: () => { running = true;  gsap.ticker.add(tick);    },
+    onLeaveBack: () => { running = false; gsap.ticker.remove(tick); },
+  });
+})
+
+
 });
