@@ -1427,14 +1427,21 @@ $('.feature_noise-particule').each(function () {
       const perEllipse = Math.floor(COUNT / ELLIPSES.length);
 
       const startPos = new Float32Array(COUNT * 3);
-      const shapePos = new Float32Array(COUNT * 3);
-      const aPhases  = new Float32Array(COUNT);
-      const aSpeeds  = new Float32Array(COUNT);
-      const aAmpX    = new Float32Array(COUNT);
-      const aAmpY    = new Float32Array(COUNT);
-      const aSizes   = new Float32Array(COUNT);
-      const aColors  = new Float32Array(COUNT * 3);
-      const aHidden  = new Float32Array(COUNT);
+      const shapePos        = new Float32Array(COUNT * 3);
+      const aPhases         = new Float32Array(COUNT);
+      const aSpeeds         = new Float32Array(COUNT);
+      const aAmpX           = new Float32Array(COUNT);
+      const aAmpY           = new Float32Array(COUNT);
+      const aSizes          = new Float32Array(COUNT);
+      const aColors         = new Float32Array(COUNT * 3);
+      const aHidden         = new Float32Array(COUNT);
+      const aOrbitRx        = new Float32Array(COUNT);
+      const aOrbitRy        = new Float32Array(COUNT);
+      const aOrbitAngle     = new Float32Array(COUNT);
+      const aOrbitDir       = new Float32Array(COUNT);
+      const shapeEllipseIdx = new Int32Array(COUNT);
+      const shapeAngles     = new Float32Array(COUNT);
+      const ORBIT_DIRS      = [-1, 1, -1, 1, -1];
 
       const PALETTE = [
         new THREE.Color('#CEAA7E'),
@@ -1461,6 +1468,8 @@ $('.feature_noise-particule').each(function () {
         shapePos[i * 3]     = (svgX - 256) * globeScale;
         shapePos[i * 3 + 1] = -(svgY - 256) * globeScale;
         shapePos[i * 3 + 2] = 0;
+        shapeEllipseIdx[i]  = eIdx;
+        shapeAngles[i]      = t;
 
         aPhases[i] = Math.random() * Math.PI * 2;
         aSpeeds[i] = Math.random() * 0.3 + 0.06;
@@ -1480,11 +1489,17 @@ $('.feature_noise-particule').each(function () {
 
       const remappedShape = new Float32Array(COUNT * 3);
       for (let i = 0; i < COUNT; i++) {
-        const di = sortedStart[i];
-        const si = sortedShape[i];
+        const di   = sortedStart[i];
+        const si   = sortedShape[i];
         remappedShape[di * 3]     = shapePos[si * 3];
         remappedShape[di * 3 + 1] = shapePos[si * 3 + 1];
         remappedShape[di * 3 + 2] = 0;
+        const eIdx      = shapeEllipseIdx[si];
+        const e         = ELLIPSES[eIdx];
+        aOrbitRx[di]    = e.rx * globeScale;
+        aOrbitRy[di]    = e.ry * globeScale;
+        aOrbitAngle[di] = shapeAngles[si];
+        aOrbitDir[di]   = ORBIT_DIRS[eIdx];
       }
 
       const geometry = new THREE.BufferGeometry();
@@ -1495,8 +1510,12 @@ $('.feature_noise-particule').each(function () {
       geometry.setAttribute('aAmpX',    new THREE.BufferAttribute(aAmpX,    1));
       geometry.setAttribute('aAmpY',    new THREE.BufferAttribute(aAmpY,    1));
       geometry.setAttribute('aSize',    new THREE.BufferAttribute(aSizes,   1));
-      geometry.setAttribute('aColor',   new THREE.BufferAttribute(aColors,  3));
-      geometry.setAttribute('aHidden',  new THREE.BufferAttribute(aHidden,  1));
+      geometry.setAttribute('aColor',      new THREE.BufferAttribute(aColors,     3));
+      geometry.setAttribute('aHidden',     new THREE.BufferAttribute(aHidden,     1));
+      geometry.setAttribute('aOrbitRx',    new THREE.BufferAttribute(aOrbitRx,    1));
+      geometry.setAttribute('aOrbitRy',    new THREE.BufferAttribute(aOrbitRy,    1));
+      geometry.setAttribute('aOrbitAngle', new THREE.BufferAttribute(aOrbitAngle, 1));
+      geometry.setAttribute('aOrbitDir',   new THREE.BufferAttribute(aOrbitDir,   1));
 
       const vertexShader = /* glsl */ `
         attribute vec3  aShape;
@@ -1507,6 +1526,10 @@ $('.feature_noise-particule').each(function () {
         attribute float aSize;
         attribute vec3  aColor;
         attribute float aHidden;
+        attribute float aOrbitRx;
+        attribute float aOrbitRy;
+        attribute float aOrbitAngle;
+        attribute float aOrbitDir;
 
         uniform float uTime;
         uniform float uOpacity;
@@ -1519,15 +1542,13 @@ $('.feature_noise-particule').each(function () {
         varying float vAlpha;
 
         void main() {
-          // Per-particle drag pour convergence organique
           float drag   = 2.5 + (1.0 - aSpeed * 1.8) * 3.5;
           float tRaw   = 1.0 - pow(1.0 - uGather, drag);
-          // Léger dépassement organique à l'arrivée — chaque grain rebondit légèrement
           float overshoot = sin(tRaw * 3.14159) * (1.0 - tRaw) * aSpeed * 0.18;
           float tEased = clamp(tRaw + overshoot, 0.0, 1.1);
 
-          // Rotation du nuage de départ — s'arrête en convergeant
-          float rotSpeed = 0.18 + aSpeed * 0.08;
+          // Rotation du nuage de départ
+          float rotSpeed = 0.06 + aSpeed * 0.02;
           float rotAngle = uTime * rotSpeed * (1.0 - tEased);
           float cosR = cos(rotAngle);
           float sinR = sin(rotAngle);
@@ -1537,23 +1558,32 @@ $('.feature_noise-particule').each(function () {
             0.0
           );
 
-          vec3 pos = mix(rotatedStart, aShape, tEased);
+          // Destination = position orbitale en temps réel
+          float orbitSpeed = 0.02 + aSpeed * 0.01;
+          float orbitT     = aOrbitAngle + aOrbitDir * uTime * orbitSpeed;
+          float spreadPx   = sin(aPhase * 5.3) * 3.5;
+          vec3  orbitPos   = vec3(
+            (aOrbitRx + spreadPx) * cos(orbitT),
+           -(aOrbitRy + spreadPx) * sin(orbitT),
+            0.0
+          );
 
-          // Battement de coeur : expansion radiale depuis la position de départ
-          float pulseLen = length(rotatedStart.xy);
-          vec2 pulseDir  = pulseLen > 0.001 ? normalize(rotatedStart.xy) : vec2(0.0);
-          pos.x += pulseDir.x * pulseLen * 1.0 * uPulse * (1.0 - tEased);
-          pos.y += pulseDir.y * pulseLen * 1.0 * uPulse * (1.0 - tEased);
+          vec3 pos = mix(rotatedStart, orbitPos, tEased);
 
-          // Mouvement étoile : fort quand dispersé, s'efface en convergeant
+          // Battement de coeur : impulsion radiale + turbulence per-particule
+          float pulseLen  = length(rotatedStart.xy);
+          vec2  pulseDir  = pulseLen > 0.001 ? normalize(rotatedStart.xy) : vec2(0.0);
+          float pulseMod  = 0.4 + sin(aPhase * 3.7) * 0.6;
+          float pulseForce = uPulse * pulseMod * (1.0 - tEased);
+          pos.x += pulseDir.x * pulseLen * 1.6 * pulseForce;
+          pos.y += pulseDir.y * pulseLen * 1.6 * pulseForce;
+          pos.x += cos(aPhase * 7.3 + 1.2) * pulseLen * 0.35 * pulseForce;
+          pos.y += sin(aPhase * 5.1 + 0.8) * pulseLen * 0.35 * pulseForce;
+
+          // Mouvement étoile avant convergence
           float floatAmt = 1.0 - tEased * 0.85;
           pos.x += sin(uTime * aSpeed * 0.4 + aPhase)       * aAmpX * floatAmt * uSettle;
           pos.y += cos(uTime * aSpeed * 0.3 + aPhase * 1.2) * aAmpY * floatAmt * uSettle;
-
-          // Légère dérive orbitale une fois sur le globe
-          float onGlobe = clamp(tEased * 2.0 - 1.0, 0.0, 1.0);
-          pos.x += sin(uTime * aSpeed * 0.10 + aPhase * 2.3) * 2.5 * onGlobe;
-          pos.y += cos(uTime * aSpeed * 0.08 + aPhase * 1.8) * 2.5 * onGlobe;
 
           float revealT = clamp((tEased - 0.90) / 0.10, 0.0, 1.0);
           float particleOpacity = mix(1.0, revealT, aHidden);
@@ -1611,11 +1641,11 @@ $('.feature_noise-particule').each(function () {
       if (globeGradient) gsap.set(globeGradient, { opacity: 0 });
 
       const ptl = gsap.timeline();
-      ptl.to(uniforms.uOpacity, { value: 1,  duration: 1.5, ease: 'power2.out' })
-         .to(uniforms.uSettle,  { value: 1,  duration: 1.5, ease: 'power2.out' }, 0)
-         .to(uniforms.uPulse,   { value: 1,  duration: 0.6,  ease: 'power3.out' }, 1.8)
-         .to(uniforms.uPulse,   { value: 0,  duration: 2.2,  ease: 'power2.in'  }, 2.4)
-         .to(uniforms.uGather,  { value: 1,  duration: 7.0, ease: 'expo.out'   }, 1.8)
+      ptl.to(uniforms.uOpacity, { value: 1,   duration: 1.5, ease: 'power2.out' })
+         .to(uniforms.uSettle,  { value: 1,   duration: 1.5, ease: 'power2.out' }, 0)
+         .to(uniforms.uPulse,   { value: 1.0, duration: 0.28, ease: 'power4.out' }, 1.8)
+         .to(uniforms.uPulse,   { value: 0,   duration: 2.5,  ease: 'sine.in'    })
+         .to(uniforms.uGather,  { value: 1,   duration: 5.0, ease: 'power3.out'  }, 1.8)
          .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
     })();
 
