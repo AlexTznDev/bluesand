@@ -1398,7 +1398,7 @@ $('.feature_noise-particule').each(function () {
 
       const isMobile = window.innerWidth < 992;
       const DPR      = Math.min(window.devicePixelRatio, 2);
-      const COUNT    = isMobile ? 25920 : 45360;
+      const COUNT    = isMobile ? 25920 : 60000;
 
       const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
       renderer.setPixelRatio(DPR);
