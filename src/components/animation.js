@@ -1512,6 +1512,7 @@ $('.feature_noise-particule').each(function () {
         uniform float uOpacity;
         uniform float uGather;
         uniform float uSettle;
+        uniform float uPulse;
         uniform vec3  uTargetColor;
 
         varying vec3  vColor;
@@ -1538,6 +1539,12 @@ $('.feature_noise-particule').each(function () {
 
           vec3 pos = mix(rotatedStart, aShape, tEased);
 
+          // Battement de coeur : expansion radiale depuis la position de départ
+          float pulseLen = length(rotatedStart.xy);
+          vec2 pulseDir  = pulseLen > 0.001 ? normalize(rotatedStart.xy) : vec2(0.0);
+          pos.x += pulseDir.x * pulseLen * 1.0 * uPulse * (1.0 - tEased);
+          pos.y += pulseDir.y * pulseLen * 1.0 * uPulse * (1.0 - tEased);
+
           // Mouvement étoile : fort quand dispersé, s'efface en convergeant
           float floatAmt = 1.0 - tEased * 0.85;
           pos.x += sin(uTime * aSpeed * 0.4 + aPhase)       * aAmpX * floatAmt * uSettle;
@@ -1548,7 +1555,7 @@ $('.feature_noise-particule').each(function () {
           pos.x += sin(uTime * aSpeed * 0.10 + aPhase * 2.3) * 2.5 * onGlobe;
           pos.y += cos(uTime * aSpeed * 0.08 + aPhase * 1.8) * 2.5 * onGlobe;
 
-          float revealT = clamp((tEased - 0.7) / 0.3, 0.0, 1.0);
+          float revealT = clamp((tEased - 0.90) / 0.10, 0.0, 1.0);
           float particleOpacity = mix(1.0, revealT, aHidden);
           vAlpha = uOpacity * particleOpacity;
           vColor = mix(aColor, uTargetColor, tEased * 0.7);
@@ -1576,6 +1583,7 @@ $('.feature_noise-particule').each(function () {
         uOpacity:     { value: 0 },
         uGather:      { value: 0 },
         uSettle:      { value: 0 },
+        uPulse:       { value: 0 },
         uTargetColor: { value: new THREE.Color('#F5D4A0') },
       };
 
@@ -1605,6 +1613,8 @@ $('.feature_noise-particule').each(function () {
       const ptl = gsap.timeline();
       ptl.to(uniforms.uOpacity, { value: 1,  duration: 1.5, ease: 'power2.out' })
          .to(uniforms.uSettle,  { value: 1,  duration: 1.5, ease: 'power2.out' }, 0)
+         .to(uniforms.uPulse,   { value: 1,  duration: 0.6,  ease: 'power3.out' }, 1.8)
+         .to(uniforms.uPulse,   { value: 0,  duration: 2.2,  ease: 'power2.in'  }, 2.4)
          .to(uniforms.uGather,  { value: 1,  duration: 7.0, ease: 'expo.out'   }, 1.8)
          .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
     })();
