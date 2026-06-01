@@ -1550,7 +1550,7 @@ $('.feature_noise-particule').each(function () {
 
           // Rotation du nuage de départ
           float rotSpeed = 0.06 + aSpeed * 0.02;
-          float rotAngle = uTime * rotSpeed * (1.0 - tEased);
+          float rotAngle = uTime * rotSpeed;
           float cosR = cos(rotAngle);
           float sinR = sin(rotAngle);
           vec3 rotatedStart = vec3(
@@ -1681,11 +1681,10 @@ $('.feature_noise-particule').each(function () {
       const ptl = gsap.timeline();
       ptl.to(uniforms.uOpacity, { value: 1,   duration: 1.5, ease: 'power2.out' })
          .to(uniforms.uSettle,  { value: 1,   duration: 1.5, ease: 'power2.out' }, 0)
-         .to(uniforms.uPulse,   { value: 1.0, duration: 0.28, ease: 'power4.out' }, 1.8)
+         .to(uniforms.uPulse,   { value: 1.0, duration: 0.55, ease: 'sine.out' }, 1.8)
          .to(uniforms.uPulse,   { value: 0,   duration: 2.5,  ease: 'sine.in'    })
-         .to(uniforms.uGather,  { value: 1, duration: 5.0, ease: 'power3.out',
-            onStart: () => { uniforms.uGatherStart.value = gsap.ticker.time; }
-         }, 1.8)
+         .call(() => { uniforms.uGatherStart.value = gsap.ticker.time; }, null, 1.8)
+         .to(uniforms.uGather,  { value: 1, duration: 5.0, ease: 'power3.out' }, 1.8)
          .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
     })();
 
