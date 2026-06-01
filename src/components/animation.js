@@ -1396,8 +1396,8 @@ $('.feature_noise-particule').each(function () {
       const canvas = el.querySelector('.home-hero_anim-canvas');
       if (!canvas) return;
 
-      const DPR      = Math.min(window.devicePixelRatio, 2);
       const isMobile = window.innerWidth < 992;
+      const DPR      = Math.min(window.devicePixelRatio, 2);
       const COUNT    = isMobile ? 25920 : 45360;
 
       const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
@@ -1476,7 +1476,7 @@ $('.feature_noise-particule').each(function () {
         aAmpX[i]   = (Math.random() * 0.5 + 0.5) * 30;
         aAmpY[i]   = (Math.random() * 0.5 + 0.5) * 30;
         aSizes[i]  = (Math.random() * 1.2 + 0.8) * DPR;
-        aHidden[i] = Math.random() < 0.8 ? 1.0 : 0.0;
+        aHidden[i] = Math.random() < 0.7 ? 1.0 : 0.0;
         const c    = PALETTE[Math.floor(Math.random() * PALETTE.length)];
         aColors[i * 3] = c.r; aColors[i * 3 + 1] = c.g; aColors[i * 3 + 2] = c.b;
       }
