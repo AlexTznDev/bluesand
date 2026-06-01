@@ -1536,6 +1536,8 @@ $('.feature_noise-particule').each(function () {
         uniform float uGather;
         uniform float uSettle;
         uniform float uPulse;
+        uniform vec2  uMouse;
+        uniform float uMouseActivity;
         uniform vec3  uTargetColor;
 
         varying vec3  vColor;
@@ -1561,12 +1563,21 @@ $('.feature_noise-particule').each(function () {
           // Destination = position orbitale en temps réel
           float orbitSpeed = 0.02 + aSpeed * 0.01;
           float orbitT     = aOrbitAngle + aOrbitDir * uTime * orbitSpeed;
-          float spreadPx   = sin(aPhase * 5.3) * 3.5;
-          vec3  orbitPos   = vec3(
+          float spreadPx = sin(aPhase * 5.3) * 3.5;
+          vec3  orbitPos = vec3(
             (aOrbitRx + spreadPx) * cos(orbitT),
            -(aOrbitRy + spreadPx) * sin(orbitT),
             0.0
           );
+
+          // Effet loupe : épaississement radial de l'anneau au passage de la souris
+          float distToMouse = distance(orbitPos.xy, uMouse);
+          float proximity   = 1.0 - smoothstep(20.0, 160.0, distToMouse);
+          // Direction radiale depuis le centre de l'ellipse = direction d'épaississement
+          vec2  radialDir   = length(orbitPos.xy) > 0.001 ? normalize(orbitPos.xy) : vec2(cos(aPhase), sin(aPhase));
+          // Dispersion per-particule dans les deux sens (intérieur + extérieur)
+          float thickness   = proximity * sin(aPhase * 4.7) * 55.0 * uMouseActivity;
+          orbitPos.xy      += radialDir * thickness;
 
           vec3 pos = mix(rotatedStart, orbitPos, tEased);
 
@@ -1613,7 +1624,9 @@ $('.feature_noise-particule').each(function () {
         uGather:      { value: 0 },
         uSettle:      { value: 0 },
         uPulse:       { value: 0 },
-        uTargetColor: { value: new THREE.Color('#F5D4A0') },
+        uMouse:         { value: new THREE.Vector2(99999, 99999) },
+        uMouseActivity: { value: 0 },
+        uTargetColor:   { value: new THREE.Color('#F5D4A0') },
       };
 
       scene.add(new THREE.Points(geometry, new THREE.ShaderMaterial({
@@ -1621,9 +1634,35 @@ $('.feature_noise-particule').each(function () {
         transparent: true, depthWrite: false,
       })));
 
+      const targetMouse = new THREE.Vector2(99999, 99999);
+
       gsap.ticker.add(function () {
         uniforms.uTime.value = gsap.ticker.time;
+        // uMouse suit la souris avec un léger lag — retour progressif quand elle s'éloigne
+        uniforms.uMouse.value.lerp(targetMouse, 0.07);
         renderer.render(scene, camera);
+      });
+
+      el.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        targetMouse.set(
+           e.clientX - rect.left - rect.width  / 2,
+          -(e.clientY - rect.top  - rect.height / 2)
+        );
+        gsap.killTweensOf(uniforms.uMouseActivity);
+        gsap.to(uniforms.uMouseActivity, { value: 1, duration: 0.35, ease: 'power2.out', overwrite: true });
+        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.4, ease: 'power2.out', delay: 0 });
+      });
+      el.addEventListener('mouseenter', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx =  e.clientX - rect.left - rect.width  / 2;
+        const my = -(e.clientY - rect.top  - rect.height / 2);
+        targetMouse.set(mx, my);
+        uniforms.uMouse.value.set(mx, my);
+      });
+      el.addEventListener('mouseleave', () => {
+        targetMouse.set(99999, 99999);
+        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.2, ease: 'power2.out', overwrite: true });
       });
 
       window.addEventListener('resize', () => {
