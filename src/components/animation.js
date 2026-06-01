@@ -1532,6 +1532,7 @@ $('.feature_noise-particule').each(function () {
         attribute float aOrbitDir;
 
         uniform float uTime;
+        uniform float uGatherStart;
         uniform float uOpacity;
         uniform float uGather;
         uniform float uSettle;
@@ -1545,9 +1546,7 @@ $('.feature_noise-particule').each(function () {
 
         void main() {
           float drag   = 2.5 + (1.0 - aSpeed * 1.8) * 3.5;
-          float tRaw   = 1.0 - pow(1.0 - uGather, drag);
-          float overshoot = sin(tRaw * 3.14159) * (1.0 - tRaw) * aSpeed * 0.18;
-          float tEased = clamp(tRaw + overshoot, 0.0, 1.1);
+          float tEased = 1.0 - pow(1.0 - uGather, drag);
 
           // Rotation du nuage de départ
           float rotSpeed = 0.06 + aSpeed * 0.02;
@@ -1560,9 +1559,9 @@ $('.feature_noise-particule').each(function () {
             0.0
           );
 
-          // Destination = position orbitale en temps réel
+          // Destination = position orbitale — temps relatif au démarrage du gather
           float orbitSpeed = 0.02 + aSpeed * 0.01;
-          float orbitT     = aOrbitAngle + aOrbitDir * uTime * orbitSpeed;
+          float orbitT     = aOrbitAngle + aOrbitDir * (uTime - uGatherStart) * orbitSpeed;
           float spreadPx = sin(aPhase * 5.3) * 3.5;
           vec3  orbitPos = vec3(
             (aOrbitRx + spreadPx) * cos(orbitT),
@@ -1619,11 +1618,12 @@ $('.feature_noise-particule').each(function () {
       `;
 
       const uniforms = {
-        uTime:        { value: 0 },
-        uOpacity:     { value: 0 },
-        uGather:      { value: 0 },
-        uSettle:      { value: 0 },
-        uPulse:       { value: 0 },
+        uTime:          { value: 0 },
+        uGatherStart:   { value: 0 },
+        uOpacity:       { value: 0 },
+        uGather:        { value: 0 },
+        uSettle:        { value: 0 },
+        uPulse:         { value: 0 },
         uMouse:         { value: new THREE.Vector2(99999, 99999) },
         uMouseActivity: { value: 0 },
         uTargetColor:   { value: new THREE.Color('#F5D4A0') },
@@ -1683,7 +1683,9 @@ $('.feature_noise-particule').each(function () {
          .to(uniforms.uSettle,  { value: 1,   duration: 1.5, ease: 'power2.out' }, 0)
          .to(uniforms.uPulse,   { value: 1.0, duration: 0.28, ease: 'power4.out' }, 1.8)
          .to(uniforms.uPulse,   { value: 0,   duration: 2.5,  ease: 'sine.in'    })
-         .to(uniforms.uGather,  { value: 1,   duration: 5.0, ease: 'power3.out'  }, 1.8)
+         .to(uniforms.uGather,  { value: 1, duration: 5.0, ease: 'power3.out',
+            onStart: () => { uniforms.uGatherStart.value = gsap.ticker.time; }
+         }, 1.8)
          .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
     })();
 
