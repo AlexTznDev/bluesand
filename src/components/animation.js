@@ -1591,7 +1591,7 @@ $('.feature_noise-particule').each(function () {
           vColor = mix(aColor, uTargetColor, tEased * 0.7);
 
           gl_Position  = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          gl_PointSize = aSize;
+          gl_PointSize = max(aSize, 1.5);
         }
       `;
 
@@ -1602,8 +1602,7 @@ $('.feature_noise-particule').each(function () {
         void main() {
           vec2  uv = gl_PointCoord - 0.5;
           float d  = length(uv);
-          float a  = 1.0 - smoothstep(0.2, 0.5, d);
-          if (a < 0.01) discard;
+          float a  = 1.0 - smoothstep(0.38, 0.5, d);
           gl_FragColor = vec4(vColor, a * vAlpha);
         }
       `;
