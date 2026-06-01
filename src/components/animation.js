@@ -1357,5 +1357,259 @@ $('.feature_noise-particule').each(function () {
   });
 })
 
+  $('.home-hero_section-v2').each(function () {
+    const el = $(this)[0];
+
+    const bg = el.querySelector('.home-hero_bg-wrap');
+    const headline = el.querySelector('.home-hero_headline');
+    const h1 = el.querySelector('h1');
+    const subtitle = el.querySelector('.home-hero_subtitile');
+    const form = el.querySelector('.form_newsletter');
+    const h1Glow = el.querySelector('.h1-glow');
+    gsap.set(h1Glow, { opacity: 0 });
+    gsap.set(el, { opacity: 1 });
+    gsap.set(bg, { scale: 1.02, opacity: 0 });
+    gsap.set([headline, h1, subtitle, form], { opacity: 0, y: 24 });
+
+    const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+
+    tl.to(bg, { scale: 1, opacity: 1, duration: 1.2 }, 0)
+      .to(headline, { opacity: 1, y: 0, duration: 0.55 }, 0.2)
+      .to(h1, { opacity: 1, y: 0, duration: 0.65 }, 0.38)
+      .to(subtitle, { opacity: 1, y: 0, duration: 0.55 }, 0.55)
+      .to(form, { opacity: 1, y: 0, duration: 0.5 }, 0.7)
+      .to(h1Glow, { opacity: 0.8, duration: 1.2, ease: 'power2.out' }, 0.8);
+
+    if (h1Glow) {
+      gsap.to(h1Glow, {
+        '--glow-x': 90,
+        '--glow-y': 100,
+        duration: 4,
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+
+    // ── Globe Particles ───────────────────────────────────
+    (function () {
+      const canvas = el.querySelector('.home-hero_anim-canvas');
+      if (!canvas) return;
+
+      const DPR      = Math.min(window.devicePixelRatio, 2);
+      const isMobile = window.innerWidth < 992;
+      const COUNT    = isMobile ? 25920 : 45360;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
+      renderer.setPixelRatio(DPR);
+      renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+      renderer.domElement.style.cssText =
+        'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+      canvas.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      let W = canvas.offsetWidth;
+      let H = canvas.offsetHeight;
+
+      const camera = new THREE.OrthographicCamera(-W / 2, W / 2, H / 2, -H / 2, 0.1, 10);
+      camera.position.z = 1;
+
+      // 5 ellipses du SVG symmetrical_globe.svg (viewBox 512×512, centre 256,256)
+      const ELLIPSES = [
+        { rx: 190, ry: 190 },
+        { rx: 190, ry:  70 },
+        { rx: 190, ry: 125 },
+        { rx:  70, ry: 190 },
+        { rx: 125, ry: 190 },
+      ];
+      // Cercle extérieur (rx=190, diameter=380) limité à 90% de H, min 1200px de hauteur
+      const globeScale = Math.max(Math.min(W * 0.85, H * 0.90) / 380, 800 / 380);
+      const perEllipse = Math.floor(COUNT / ELLIPSES.length);
+
+      const startPos = new Float32Array(COUNT * 3);
+      const shapePos = new Float32Array(COUNT * 3);
+      const aPhases  = new Float32Array(COUNT);
+      const aSpeeds  = new Float32Array(COUNT);
+      const aAmpX    = new Float32Array(COUNT);
+      const aAmpY    = new Float32Array(COUNT);
+      const aSizes   = new Float32Array(COUNT);
+      const aColors  = new Float32Array(COUNT * 3);
+      const aHidden  = new Float32Array(COUNT);
+
+      const PALETTE = [
+        new THREE.Color('#CEAA7E'),
+        new THREE.Color('#D4A96A'),
+        new THREE.Color('#F3C48E'),
+        new THREE.Color('#F1BF85'),
+      ];
+
+      for (let i = 0; i < COUNT; i++) {
+        // Position de départ : étoiles dispersées sur tout le canvas
+        const sAngle = Math.random() * Math.PI * 2;
+        const sR     = Math.sqrt(Math.random()) * Math.min(W, H) * 0.55;
+        startPos[i * 3]     = Math.cos(sAngle) * sR;
+        startPos[i * 3 + 1] = Math.sin(sAngle) * sR;
+        startPos[i * 3 + 2] = 0;
+
+        // Destination : point sur l'une des 5 ellipses du globe
+        const eIdx   = Math.min(Math.floor(i / perEllipse), ELLIPSES.length - 1);
+        const e      = ELLIPSES[eIdx];
+        const localI = i - eIdx * perEllipse;
+        const t      = (localI / perEllipse) * Math.PI * 2;
+        const svgX   = 256 + e.rx * Math.cos(t);
+        const svgY   = 256 + e.ry * Math.sin(t);
+        shapePos[i * 3]     = (svgX - 256) * globeScale;
+        shapePos[i * 3 + 1] = -(svgY - 256) * globeScale;
+        shapePos[i * 3 + 2] = 0;
+
+        aPhases[i] = Math.random() * Math.PI * 2;
+        aSpeeds[i] = Math.random() * 0.3 + 0.06;
+        aAmpX[i]   = (Math.random() * 0.5 + 0.5) * 30;
+        aAmpY[i]   = (Math.random() * 0.5 + 0.5) * 30;
+        aSizes[i]  = (Math.random() * 1.2 + 0.8) * DPR;
+        aHidden[i] = Math.random() < 0.8 ? 1.0 : 0.0;
+        const c    = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+        aColors[i * 3] = c.r; aColors[i * 3 + 1] = c.g; aColors[i * 3 + 2] = c.b;
+      }
+
+      // Appairage angulaire : chaque particule va au point de forme à l'angle le plus proche
+      const sortedStart = Array.from({ length: COUNT }, (_, i) => i)
+        .sort((a, b) => Math.atan2(startPos[a*3+1], startPos[a*3]) - Math.atan2(startPos[b*3+1], startPos[b*3]));
+      const sortedShape = Array.from({ length: COUNT }, (_, i) => i)
+        .sort((a, b) => Math.atan2(shapePos[a*3+1], shapePos[a*3]) - Math.atan2(shapePos[b*3+1], shapePos[b*3]));
+
+      const remappedShape = new Float32Array(COUNT * 3);
+      for (let i = 0; i < COUNT; i++) {
+        const di = sortedStart[i];
+        const si = sortedShape[i];
+        remappedShape[di * 3]     = shapePos[si * 3];
+        remappedShape[di * 3 + 1] = shapePos[si * 3 + 1];
+        remappedShape[di * 3 + 2] = 0;
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.BufferAttribute(startPos, 3));
+      geometry.setAttribute('aShape',   new THREE.BufferAttribute(remappedShape, 3));
+      geometry.setAttribute('aPhase',   new THREE.BufferAttribute(aPhases,  1));
+      geometry.setAttribute('aSpeed',   new THREE.BufferAttribute(aSpeeds,  1));
+      geometry.setAttribute('aAmpX',    new THREE.BufferAttribute(aAmpX,    1));
+      geometry.setAttribute('aAmpY',    new THREE.BufferAttribute(aAmpY,    1));
+      geometry.setAttribute('aSize',    new THREE.BufferAttribute(aSizes,   1));
+      geometry.setAttribute('aColor',   new THREE.BufferAttribute(aColors,  3));
+      geometry.setAttribute('aHidden',  new THREE.BufferAttribute(aHidden,  1));
+
+      const vertexShader = /* glsl */ `
+        attribute vec3  aShape;
+        attribute float aPhase;
+        attribute float aSpeed;
+        attribute float aAmpX;
+        attribute float aAmpY;
+        attribute float aSize;
+        attribute vec3  aColor;
+        attribute float aHidden;
+
+        uniform float uTime;
+        uniform float uOpacity;
+        uniform float uGather;
+        uniform float uSettle;
+        uniform vec3  uTargetColor;
+
+        varying vec3  vColor;
+        varying float vAlpha;
+
+        void main() {
+          // Per-particle drag pour convergence organique
+          float drag   = 2.5 + (1.0 - aSpeed * 1.8) * 3.5;
+          float tRaw   = 1.0 - pow(1.0 - uGather, drag);
+          // Léger dépassement organique à l'arrivée — chaque grain rebondit légèrement
+          float overshoot = sin(tRaw * 3.14159) * (1.0 - tRaw) * aSpeed * 0.18;
+          float tEased = clamp(tRaw + overshoot, 0.0, 1.1);
+
+          // Rotation du nuage de départ — s'arrête en convergeant
+          float rotSpeed = 0.18 + aSpeed * 0.08;
+          float rotAngle = uTime * rotSpeed * (1.0 - tEased);
+          float cosR = cos(rotAngle);
+          float sinR = sin(rotAngle);
+          vec3 rotatedStart = vec3(
+            position.x * cosR - position.y * sinR,
+            position.x * sinR + position.y * cosR,
+            0.0
+          );
+
+          vec3 pos = mix(rotatedStart, aShape, tEased);
+
+          // Mouvement étoile : fort quand dispersé, s'efface en convergeant
+          float floatAmt = 1.0 - tEased * 0.85;
+          pos.x += sin(uTime * aSpeed * 0.4 + aPhase)       * aAmpX * floatAmt * uSettle;
+          pos.y += cos(uTime * aSpeed * 0.3 + aPhase * 1.2) * aAmpY * floatAmt * uSettle;
+
+          // Légère dérive orbitale une fois sur le globe
+          float onGlobe = clamp(tEased * 2.0 - 1.0, 0.0, 1.0);
+          pos.x += sin(uTime * aSpeed * 0.10 + aPhase * 2.3) * 2.5 * onGlobe;
+          pos.y += cos(uTime * aSpeed * 0.08 + aPhase * 1.8) * 2.5 * onGlobe;
+
+          float revealT = clamp((tEased - 0.7) / 0.3, 0.0, 1.0);
+          float particleOpacity = mix(1.0, revealT, aHidden);
+          vAlpha = uOpacity * particleOpacity;
+          vColor = mix(aColor, uTargetColor, tEased * 0.7);
+
+          gl_Position  = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          gl_PointSize = aSize;
+        }
+      `;
+
+      const fragmentShader = /* glsl */ `
+        varying vec3  vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec2  uv = gl_PointCoord - 0.5;
+          float d  = length(uv);
+          float a  = 1.0 - smoothstep(0.2, 0.5, d);
+          if (a < 0.01) discard;
+          gl_FragColor = vec4(vColor, a * vAlpha);
+        }
+      `;
+
+      const uniforms = {
+        uTime:        { value: 0 },
+        uOpacity:     { value: 0 },
+        uGather:      { value: 0 },
+        uSettle:      { value: 0 },
+        uTargetColor: { value: new THREE.Color('#F5D4A0') },
+      };
+
+      scene.add(new THREE.Points(geometry, new THREE.ShaderMaterial({
+        vertexShader, fragmentShader, uniforms,
+        transparent: true, depthWrite: false,
+      })));
+
+      gsap.ticker.add(function () {
+        uniforms.uTime.value = gsap.ticker.time;
+        renderer.render(scene, camera);
+      });
+
+      window.addEventListener('resize', () => {
+        W = canvas.offsetWidth; H = canvas.offsetHeight;
+        camera.left = -W / 2; camera.right  =  W / 2;
+        camera.top  =  H / 2; camera.bottom = -H / 2;
+        camera.updateProjectionMatrix();
+        renderer.setSize(W, H);
+      }, { passive: true });
+
+      // Phase 1 (t=1.2s) : étoiles apparaissent après le hero entrance
+      // Phase 2 (t=3.0s) : convergence vers le globe
+      const globeGradient = el.querySelector('.home-hero_anim-globe-gradient');
+      if (globeGradient) gsap.set(globeGradient, { opacity: 0 });
+
+      const ptl = gsap.timeline();
+      ptl.to(uniforms.uOpacity, { value: 1,  duration: 1.5, ease: 'power2.out' })
+         .to(uniforms.uSettle,  { value: 1,  duration: 1.5, ease: 'power2.out' }, 0)
+         .to(uniforms.uGather,  { value: 1,  duration: 7.0, ease: 'expo.out'   }, 1.8)
+         .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
+    })();
+
+  });
+
 
 });
