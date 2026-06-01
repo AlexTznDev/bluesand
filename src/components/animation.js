@@ -1612,7 +1612,7 @@ $('.feature_noise-particule').each(function () {
         void main() {
           vec2  uv = gl_PointCoord - 0.5;
           float d  = length(uv);
-          float a  = 1.0 - smoothstep(0.38, 0.5, d);
+          float a  = 1.0 - smoothstep(0.25, 0.5, d);
           gl_FragColor = vec4(vColor, a * vAlpha);
         }
       `;
