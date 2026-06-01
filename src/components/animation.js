@@ -1571,7 +1571,7 @@ $('.feature_noise-particule').each(function () {
 
           // Effet loupe : épaississement radial de l'anneau au passage de la souris
           float distToMouse = distance(orbitPos.xy, uMouse);
-          float proximity   = 1.0 - smoothstep(20.0, 160.0, distToMouse);
+          float proximity   = 1.0 - smoothstep(20.0, 220.0, distToMouse);
           // Direction radiale depuis le centre de l'ellipse = direction d'épaississement
           vec2  radialDir   = length(orbitPos.xy) > 0.001 ? normalize(orbitPos.xy) : vec2(cos(aPhase), sin(aPhase));
           // Dispersion per-particule dans les deux sens (intérieur + extérieur)
@@ -1651,7 +1651,7 @@ $('.feature_noise-particule').each(function () {
         );
         gsap.killTweensOf(uniforms.uMouseActivity);
         gsap.to(uniforms.uMouseActivity, { value: 1, duration: 0.35, ease: 'power2.out', overwrite: true });
-        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.4, ease: 'power2.out', delay: 0 });
+        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.4, ease: 'power2.out', delay: 0.35 });
       });
       el.addEventListener('mouseenter', (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -1661,7 +1661,6 @@ $('.feature_noise-particule').each(function () {
         uniforms.uMouse.value.set(mx, my);
       });
       el.addEventListener('mouseleave', () => {
-        targetMouse.set(99999, 99999);
         gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.2, ease: 'power2.out', overwrite: true });
       });
 
