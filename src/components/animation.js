@@ -1679,13 +1679,13 @@ $('.feature_noise-particule').each(function () {
       if (globeGradient) gsap.set(globeGradient, { opacity: 0 });
 
       const ptl = gsap.timeline();
-      ptl.to(uniforms.uOpacity, { value: 1,   duration: 1.5, ease: 'power2.out' })
-         .to(uniforms.uSettle,  { value: 1,   duration: 1.5, ease: 'power2.out' }, 0)
-         .to(uniforms.uPulse,   { value: 1.0, duration: 0.55, ease: 'sine.out' }, 1.8)
+      ptl.to(uniforms.uOpacity, { value: 1,   duration: 1.0, ease: 'power2.out' })
+         .to(uniforms.uSettle,  { value: 1,   duration: 1.0, ease: 'power2.out' }, 0)
+         .to(uniforms.uPulse,   { value: 1.0, duration: 0.55, ease: 'sine.out' }, 1.3)
          .to(uniforms.uPulse,   { value: 0,   duration: 2.5,  ease: 'sine.in'    })
-         .call(() => { uniforms.uGatherStart.value = gsap.ticker.time; }, null, 1.8)
-         .to(uniforms.uGather,  { value: 1, duration: 5.0, ease: 'power3.out' }, 1.8)
-         .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.5);
+         .call(() => { uniforms.uGatherStart.value = gsap.ticker.time; }, null, 1.3)
+         .to(uniforms.uGather,  { value: 1, duration: 5.0, ease: 'power3.out' }, 1.3)
+         .to(globeGradient,     { opacity: 1, duration: 1.0, ease: 'power2.out' }, 1.3);
     })();
 
   });
