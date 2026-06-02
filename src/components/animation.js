@@ -1785,8 +1785,11 @@ $('.feature_noise-particule').each(function () {
         { rx:  70, ry: 190 },
         { rx: 125, ry: 190 },
       ];
-      // Cercle extérieur (rx=190, diameter=380) limité à 90% de H, min 1200px de hauteur
-      const globeScale = Math.max(Math.min(W * 0.85, H * 0.90) / 380, 800 / 380);
+      // Mobile : max 70% H et 85% W, sans minimum forcé
+      // Desktop : max 90% H et 85% W, min 800px de diamètre
+      const globeScale = isMobile
+        ? H * 0.90 / 380
+        : Math.max(Math.min(W * 0.85, H * 0.90) / 380, 800 / 380);
       const perEllipse = Math.floor(COUNT / ELLIPSES.length);
 
       const startPos = new Float32Array(COUNT * 3);
