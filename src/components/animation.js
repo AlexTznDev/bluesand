@@ -75,7 +75,352 @@ window.Webflow.push(() => {
     }
   });
 
-  $('.features_item-contain.is-1').each(function () {
+  // $('.features_item-contain.is-1').each(function () {
+  //   /* ══════════════════════════════════════════════════════
+  //  BLUESAND – Scene 3  (Steer Activity + Pacing Chart)
+  //  Requires: GSAP 3.12+ and ScrollTrigger
+  //  ══════════════════════════════════════════════════════ */
+  //   (function () {
+  //     'use strict';
+
+  //     if (typeof window === 'undefined' || !window.gsap) return;
+  //     const gsap = window.gsap;
+  //     if (window.ScrollTrigger) gsap.registerPlugin(window.ScrollTrigger);
+
+  //     const prefersReducedMotion =
+  //       window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  //     /* ───────── helpers ───────── */
+  //     function qs(root, sel) {
+  //       return root.querySelector(sel);
+  //     }
+  //     function qsa(root, sel) {
+  //       return Array.from(root.querySelectorAll(sel));
+  //     }
+
+  //     /* ───────── counter animation 0 → 92 ───────── */
+  //     function animateCounter(el, finalVal, duration, delay) {
+  //       if (!el) return;
+  //       const obj = { v: 0 };
+  //       gsap.to(obj, {
+  //         v: finalVal,
+  //         duration: duration,
+  //         delay: delay,
+  //         ease: 'power2.out',
+  //         onUpdate: () => {
+  //           el.textContent = Math.round(obj.v);
+  //         },
+  //       });
+  //     }
+
+  //     /* ───────── pulse send button ───────── */
+  //     function animateSendPulse(btn) {
+  //       if (!btn || prefersReducedMotion) return;
+  //       gsap.to(btn, {
+  //         scale: 1.12,
+  //         duration: 1.3,
+  //         ease: 'sine.inOut',
+  //         yoyo: true,
+  //         repeat: -1,
+  //         transformOrigin: '50% 50%',
+  //       });
+  //     }
+
+  //     /* ───────── Planning background timeline ───────── */
+  //     function buildPlanTimeline(scene) {
+  //       const plan = qs(scene, '.plan-bg');
+  //       if (!plan) return gsap.timeline();
+
+  //       const tl = gsap.timeline();
+  //       gsap.set(plan, { opacity: 0, y: 10, scale: 1.02, transformOrigin: '0% 50%' });
+
+  //       tl.to(plan, {
+  //         opacity: 1,
+  //         y: 0,
+  //         scale: 1,
+  //         duration: 1.0,
+  //         ease: 'power2.out',
+  //       });
+  //       return tl;
+  //     }
+
+  //     /* ───────── Pacing chart timeline ───────── */
+  //     function buildPacingTimeline(scene) {
+  //       const card = qs(scene, '.card-pacing');
+  //       if (!card) return gsap.timeline();
+
+  //       const lineExp = qs(card, '[data-line-exp]');
+  //       console.log(lineExp);
+  //       const lineAct = qs(card, '[data-line-act]');
+  //       const areaExp = qs(card, '[data-area-exp]');
+  //       const areaAct = qs(card, '[data-area-act]');
+  //       const grids = qsa(card, '[data-grid]');
+  //       const today = qs(card, '[data-pacing-today]');
+  //       const badge = qs(card, '[data-pacing-badge]');
+  //       const dots = qsa(card, '[data-pacing-dot]');
+  //       const counter = qs(card, '[data-counter]');
+  //       const headBits = qsa(
+  //         card,
+  //         '.pacing-title, .pacing-stat, .pacing-legend__item, .pacing-y, .pacing-x span'
+  //       );
+
+  //       /* initial states ------------------------------------------------ */
+  //       gsap.set(card, { y: 30, opacity: 0, scale: 0.985, transformOrigin: '50% 100%' });
+  //       gsap.set(headBits, { opacity: 0, y: 6 });
+  //       gsap.set(grids, { scaleX: 0, transformOrigin: '0% 50%' });
+
+  //       [lineExp, lineAct].forEach((el) => {
+  //         if (!el) return;
+  //         const len = el.getTotalLength();
+  //         gsap.set(el, { strokeDasharray: len, strokeDashoffset: len });
+  //       });
+  //       gsap.set([areaExp, areaAct], { opacity: 0 });
+  //       gsap.set(today, { scaleY: 0, transformOrigin: '50% 0%', opacity: 0 });
+  //       gsap.set(badge, { opacity: 0, y: -4 });
+  //       gsap.set(dots, { opacity: 0, scale: 0 });
+
+  //       /* timeline ------------------------------------------------------ */
+  //       const tl = gsap.timeline();
+
+  //       tl.to(
+  //         card,
+  //         {
+  //           y: 0,
+  //           opacity: 1,
+  //           scale: 1,
+  //           duration: 0.9,
+  //           ease: 'power3.out',
+  //         },
+  //         0
+  //       )
+  //         .to(
+  //           headBits,
+  //           {
+  //             opacity: 1,
+  //             y: 0,
+  //             duration: 0.5,
+  //             stagger: 0.04,
+  //             ease: 'power2.out',
+  //           },
+  //           0.25
+  //         )
+  //         .to(
+  //           grids,
+  //           {
+  //             scaleX: 1,
+  //             duration: 0.8,
+  //             ease: 'power2.out',
+  //             stagger: 0.05,
+  //           },
+  //           0.35
+  //         );
+
+  //       if (counter) animateCounter(counter, 65, 1.2, 0.4);
+
+  //       tl.to(
+  //         lineExp,
+  //         {
+  //           strokeDashoffset: 0,
+  //           duration: 1.6,
+  //           ease: 'power1.inOut',
+  //         },
+  //         0.55
+  //       )
+  //         .to(
+  //           lineAct,
+  //           {
+  //             strokeDashoffset: 0,
+  //             duration: 1.6,
+  //             ease: 'power1.inOut',
+  //           },
+  //           0.75
+  //         )
+  //         .to(
+  //           areaExp,
+  //           {
+  //             opacity: 0.28,
+  //             duration: 0.8,
+  //             ease: 'power1.out',
+  //           },
+  //           1.4
+  //         )
+  //         .to(
+  //           areaAct,
+  //           {
+  //             opacity: 0.9,
+  //             duration: 0.8,
+  //             ease: 'power1.out',
+  //           },
+  //           1.55
+  //         )
+  //         .to(
+  //           today,
+  //           {
+  //             scaleY: 1,
+  //             opacity: 1,
+  //             duration: 0.5,
+  //             ease: 'power2.out',
+  //           },
+  //           1.7
+  //         )
+  //         .to(
+  //           badge,
+  //           {
+  //             opacity: 1,
+  //             y: 0,
+  //             duration: 0.35,
+  //             ease: 'back.out(2)',
+  //           },
+  //           1.9
+  //         )
+  //         .to(
+  //           dots,
+  //           {
+  //             opacity: 1,
+  //             scale: 1,
+  //             duration: 0.4,
+  //             stagger: 0.08,
+  //             ease: 'back.out(2.5)',
+  //           },
+  //           1.95
+  //         );
+
+  //       return tl;
+  //     }
+
+  //     /* ───────── Chat modal timeline ───────── */
+  //     function buildChatTimeline(scene) {
+  //       const card = qs(scene, '.card-chat');
+  //       if (!card) return gsap.timeline();
+
+  //       const header = qs(card, '.chat-header');
+  //       const msgs = qsa(card, '[data-chat-msg]');
+  //       const input = qs(card, '.chat-input');
+  //       const sendBtn = qs(card, '[data-chat-send]');
+
+  //       /* initial states ----------------------------------------------- */
+  //       gsap.set(card, { y: 40, opacity: 0, scale: 0.96, transformOrigin: '50% 0%' });
+  //       gsap.set(header, { opacity: 0, y: -6 });
+  //       gsap.set(input, { opacity: 0, y: 6 });
+  //       gsap.set(msgs, { opacity: 0, y: 12 });
+
+  //       /* timeline ------------------------------------------------------ */
+  //       const tl = gsap.timeline();
+
+  //       tl.to(
+  //         card,
+  //         {
+  //           y: 0,
+  //           opacity: 1,
+  //           scale: 1,
+  //           duration: 0.85,
+  //           ease: 'power3.out',
+  //         },
+  //         0
+  //       )
+  //         .to(
+  //           header,
+  //           {
+  //             opacity: 1,
+  //             y: 0,
+  //             duration: 0.4,
+  //             ease: 'power2.out',
+  //           },
+  //           0.2
+  //         )
+  //         .to(
+  //           input,
+  //           {
+  //             opacity: 1,
+  //             y: 0,
+  //             duration: 0.4,
+  //             ease: 'power2.out',
+  //           },
+  //           0.25
+  //         )
+  //         .add(() => animateSendPulse(sendBtn), 0.3)
+  //         .to(
+  //           msgs,
+  //           {
+  //             opacity: 1,
+  //             y: 0,
+  //             duration: 0.55,
+  //             stagger: 0.22,
+  //             ease: 'power2.out',
+  //           },
+  //           0.5
+  //         );
+
+  //       return tl;
+  //     }
+
+  //     /* ───────── Scene orchestration ───────── */
+  //     function initScene(scene) {
+  //       if (scene.dataset.bsScene3Inited === '1') return;
+  //       scene.dataset.bsScene3Inited = '1';
+
+  //       const embedContain = document.querySelector('.features_first-contain-embed');
+  //       if (embedContain) gsap.set(embedContain, { opacity: 1 });
+
+  //       const master = gsap.timeline({ paused: true });
+  //       master
+  //         .add(buildPlanTimeline(scene), 0)
+  //         .add(buildPacingTimeline(scene), 0.1)
+  //         .add(buildChatTimeline(scene), 1.9);
+
+  //       if (prefersReducedMotion) {
+  //         master.progress(1);
+  //         return;
+  //       }
+
+  //       if (window.ScrollTrigger) {
+  //         window.ScrollTrigger.create({
+  //           trigger: scene,
+  //           start: 'top 82%',
+  //           once: true,
+  //           onEnter: () => master.play(),
+  //         });
+  //       } else {
+  //         master.play();
+  //       }
+  //     }
+
+  //     function init() {
+  //       // Optional responsive scaling for scenes wrapped in .bluesand-scene-3-scale
+  //       function applyScale() {
+  //         qsa(document, '.bluesand-scene-3-scale > .bluesand-scene-3').forEach((scene) => {
+  //           const wrap = scene.parentElement;
+  //           if (!wrap) return;
+
+  //           const base = 745; // scene's natural width in px
+
+  //           const cs = getComputedStyle(wrap);
+  //           const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+  //           const availW = Math.max(0, (wrap.clientWidth || base) - padX);
+
+  //           // Width-only to avoid "stuck at smallest scale" (wrapper height depends on scale).
+  //           const scale = Math.min(1, availW / base);
+  //           wrap.style.setProperty('--scene3-scale', String(scale));
+  //         });
+
+  //         if (window.ScrollTrigger && window.ScrollTrigger.refresh) window.ScrollTrigger.refresh();
+  //       }
+
+  //       applyScale();
+  //       window.addEventListener('resize', applyScale, { passive: true });
+
+  //       qsa(document, '.bluesand-scene-3').forEach(initScene);
+  //     }
+
+  //     if (document.readyState === 'loading') {
+  //       document.addEventListener('DOMContentLoaded', init);
+  //     } else {
+  //       init();
+  //     }
+  //   })();
+  // });
+
+    $('.features_item-contain.is-1').each(function () {
     /* ══════════════════════════════════════════════════════
    BLUESAND – Scene 3  (Steer Activity + Pacing Chart)
    Requires: GSAP 3.12+ and ScrollTrigger
@@ -407,7 +752,13 @@ window.Webflow.push(() => {
         }
 
         applyScale();
-        window.addEventListener('resize', applyScale, { passive: true });
+        let _lastW = window.innerWidth;
+        window.addEventListener('resize', () => {
+          const w = window.innerWidth;
+          if (w === _lastW) return;
+          _lastW = w;
+          applyScale();
+        }, { passive: true });
 
         qsa(document, '.bluesand-scene-3').forEach(initScene);
       }
