@@ -2000,24 +2000,40 @@ $('.feature_noise-particule').each(function () {
         transparent: true, depthWrite: false,
       })));
 
-      const targetMouse = new THREE.Vector2(99999, 99999);
+      const targetMouse  = new THREE.Vector2(99999, 99999);
+      const frozenMouse  = new THREE.Vector2(99999, 99999);
+      const globeZoneR   = 190 * globeScale + 220;
+      let   inGlobeZone  = false;
+
+      function startFade(duration) {
+        gsap.killTweensOf(uniforms.uMouseActivity);
+        gsap.to(uniforms.uMouseActivity, { value: 0, duration, ease: 'power2.out' });
+      }
 
       gsap.ticker.add(function () {
         uniforms.uTime.value = gsap.ticker.time;
-        // uMouse suit la souris avec un léger lag — retour progressif quand elle s'éloigne
         uniforms.uMouse.value.lerp(targetMouse, 0.07);
         renderer.render(scene, camera);
       });
 
       el.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        targetMouse.set(
-           e.clientX - rect.left - rect.width  / 2,
-          -(e.clientY - rect.top  - rect.height / 2)
-        );
-        gsap.killTweensOf(uniforms.uMouseActivity);
-        gsap.to(uniforms.uMouseActivity, { value: 1, duration: 0.35, ease: 'power2.out', overwrite: true });
-        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.4, ease: 'power2.out', delay: 0.35 });
+        const mx =  e.clientX - rect.left - rect.width  / 2;
+        const my = -(e.clientY - rect.top  - rect.height / 2);
+        const dist = Math.sqrt(mx * mx + my * my);
+
+        if (dist < globeZoneR) {
+          targetMouse.set(mx, my);
+          frozenMouse.set(mx, my);
+          if (!inGlobeZone) inGlobeZone = true;
+          gsap.killTweensOf(uniforms.uMouseActivity);
+          gsap.to(uniforms.uMouseActivity, { value: 1, duration: 0.35, ease: 'power2.out', overwrite: true });
+          gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.4, ease: 'power2.out', delay: 0.35 });
+        } else if (inGlobeZone) {
+          inGlobeZone = false;
+          targetMouse.set(frozenMouse.x, frozenMouse.y);
+          startFade(2.2);
+        }
       });
       el.addEventListener('mouseenter', (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -2027,7 +2043,8 @@ $('.feature_noise-particule').each(function () {
         uniforms.uMouse.value.set(mx, my);
       });
       el.addEventListener('mouseleave', () => {
-        gsap.to(uniforms.uMouseActivity, { value: 0, duration: 1.2, ease: 'power2.out', overwrite: true });
+        inGlobeZone = false;
+        startFade(2.2);
       });
 
       window.addEventListener('resize', () => {
