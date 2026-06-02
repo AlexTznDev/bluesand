@@ -1622,10 +1622,9 @@ $('.feature_noise-particule').each(function () {
     aPos[i * 3 + 1] = gauss() * H * 0.166;
     aPos[i * 3 + 2] = 0;
 
-    // Cercle — anneau légèrement irrégulier, pas parfaitement mathématique
+    // Boule pleine — distribution uniforme dans le disque
     const angle = Math.random() * Math.PI * 2;
-    // Distribution gaussienne sur le rayon : dense au centre, queue qui s'étale
-    const r = circleR + gauss() * circleR * 0.04;
+    const r = Math.sqrt(Math.random()) * circleR;
     aCircle[i * 3]     = Math.cos(angle) * r;
     aCircle[i * 3 + 1] = Math.sin(angle) * r;
     aCircle[i * 3 + 2] = 0;
@@ -1638,7 +1637,7 @@ $('.feature_noise-particule').each(function () {
     aAmpX[i]   = (Math.random() * 0.6 + 0.4) * 22;
     aAmpY[i]   = (Math.random() * 0.6 + 0.4) * 16;
     aSizes[i]  = (Math.random() * 1.495 + 1.047) * DPR;
-    aHidden[i] = Math.random() < 0.4 ? 1.0 : 0.0;
+    aHidden[i] = 0.0;
   }
 
   const geometry = new THREE.BufferGeometry();
