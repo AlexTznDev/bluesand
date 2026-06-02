@@ -770,7 +770,7 @@ window.Webflow.push(() => {
       }
     })();
   });
-
+  
   $('.features_item-contain.is-2').each(function () {
     var scope = this;
 
@@ -993,14 +993,14 @@ window.Webflow.push(() => {
 
       function init() {
         applySceneScale();
-        window.addEventListener(
-          'resize',
-          function () {
-            applySceneScale();
-            if (window.ScrollTrigger && ScrollTrigger.refresh) ScrollTrigger.refresh();
-          },
-          { passive: true }
-        );
+        var _lastW2 = window.innerWidth;
+        window.addEventListener('resize', function () {
+          var w = window.innerWidth;
+          if (w === _lastW2) return;
+          _lastW2 = w;
+          applySceneScale();
+          if (window.ScrollTrigger && ScrollTrigger.refresh) ScrollTrigger.refresh();
+        }, { passive: true });
 
         scope.querySelectorAll('.bluesand-scene').forEach(initScene);
       }
@@ -1198,7 +1198,13 @@ window.Webflow.push(() => {
 
 
         applyScale();
-        window.addEventListener('resize', applyScale, { passive: true });
+        var _lastW3 = window.innerWidth;
+        window.addEventListener('resize', function () {
+          var w = window.innerWidth;
+          if (w === _lastW3) return;
+          _lastW3 = w;
+          applyScale();
+        }, { passive: true });
 
         document.querySelectorAll('.bluesand-scene-2').forEach(initScene);
       }
@@ -1456,7 +1462,13 @@ window.Webflow.push(() => {
         }
 
         applyScale();
-        window.addEventListener('resize', applyScale, { passive: true });
+        let _lastW4 = window.innerWidth;
+        window.addEventListener('resize', () => {
+          const w = window.innerWidth;
+          if (w === _lastW4) return;
+          _lastW4 = w;
+          applyScale();
+        }, { passive: true });
 
         qsa(document, '.bluesand-scene-4').forEach(initScene);
       }
